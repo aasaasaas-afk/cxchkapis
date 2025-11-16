@@ -23,8 +23,8 @@ GATE_MODULES = {
     'payu1': 'payu1',
 }
 
-@app.route('/rocky/gate/<gate_name>/cc=<path:card_details>')
-def process_gate(gate_name, card_details):
+@app.route('/rocky/gate/<gate_name>/cc', methods=['GET'])
+def process_gate(gate_name):
     """
     Process payment request for specified gate
     """
@@ -36,6 +36,10 @@ def process_gate(gate_name, card_details):
                 "value": "Invalid gate specified.",
                 "status": "declined"
             }), 400
+        
+        # Get card details from the query string
+        # Using request.args.get to properly handle query parameters
+        card_details = request.args.get('cc', '')
         
         # URL decode card details
         card_details = unquote(card_details)
@@ -50,7 +54,6 @@ def process_gate(gate_name, card_details):
         
         # Log the request (without sensitive data)
         logger.info(f"Processing payment via gate: {gate_name}")
-        logger.info(f"Card details received: {len(card_details)} characters")
         
         # Import the appropriate module
         module_name = GATE_MODULES[gate_name]
@@ -89,7 +92,6 @@ def index():
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Success</title>
     <style>
         body {
@@ -238,6 +240,7 @@ def index():
         <span class="particle">✦</span>
         <span class="particle">✧</span>
         <span class="particle">✦</span>
+        <span class="particle">✧</span>
     </div>
     
     <div class="success-container">
