@@ -23,13 +23,19 @@ GATE_MODULES = {
     'payu1': 'payu1',
 }
 
-@app.route('/rocky/gate/<gate_name>/cc', methods=['GET'])
+@app.route('/rocky/gate/<gate_name>/cc=')
 def process_gate(gate_name):
     """
     Process payment request for specified gate
+    
+    Args:
+        gate_name (str): Name of the gate (payu1euro, payu1pln, payu1)
+    
+    Returns:
+        JSON response with payment status
     """
     try:
-        # Check if gate exists
+        # Check if the gate exists
         if gate_name not in GATE_MODULES:
             logger.error(f"Unknown gate: {gate_name}")
             return jsonify({
@@ -38,10 +44,9 @@ def process_gate(gate_name):
             }), 400
         
         # Get card details from the query string
-        # Using request.args.get to properly handle query parameters
-        card_details = request.args.get('cc', '')
+        card_details = request.query_string.decode('utf-8')
         
-        # URL decode card details
+        # URL decode the card details
         card_details = unquote(card_details)
         
         # Validate that card details are provided
@@ -84,9 +89,17 @@ def process_gate(gate_name):
             "status": "declined"
         }), 500
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint"""
+    return jsonify({
+        "status": "healthy",
+        "available_gates": list(GATE_MODULES.keys())
+    })
+
 @app.route('/')
 def index():
-    """Root endpoint showing a simple HTML page"""
+    """Root endpoint with HTML landing page"""
     html_content = """
 <!DOCTYPE html>
 <html lang="en">
@@ -241,6 +254,7 @@ def index():
         <span class="particle">✧</span>
         <span class="particle">✦</span>
         <span class="particle">✧</span>
+        <span class="particle">✦</span>
     </div>
     
     <div class="success-container">
