@@ -23,7 +23,7 @@ GATE_MODULES = {
     'payu1': 'payu1',
 }
 
-@app.route('/rocky/gate/<gate_name>/cc', methods=['GET'])
+@app.route('/rocky/gate/<gate_name>/cc=')
 def process_gate(gate_name):
     """
     Process payment request for specified gate
@@ -38,8 +38,7 @@ def process_gate(gate_name):
             }), 400
         
         # Get card details from the query string
-        # Using request.args.get to properly handle query parameters
-        card_details = request.args.get('cc', '')
+        card_details = request.query_string.decode('utf-8')
         
         # URL decode card details
         card_details = unquote(card_details)
@@ -258,4 +257,7 @@ def index():
     return render_template_string(html_content)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=False)
+    app.run(host='0.0.0.0', port=8000, debug=False)}
+
+
+in this the endpoints for checking are not wworking fix them
