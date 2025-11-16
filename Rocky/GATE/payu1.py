@@ -217,9 +217,9 @@ class DonationAutomation:
             form_data = {
                 'token': '',
                 'targetURL': 'https://www.pah.org.pl/dziekujemy-za-twoja-darowizne/',
-                'amount': '1',  # Changed to 1 USD
-                'amount-value': '1',  # Changed to 1 USD
-                'currency': 'USD',  # Changed from EUR to USD
+                'amount': '1',  # Changed to 1 GBP
+                'amount-value': '1',  # Changed to 1 GBP
+                'currency': 'GBP',  # Changed from EUR to GBP
                 'payment_type': 'single',
                 'description': "I'm donating to support PAH's humanitarian work around the world",
                 'phone_number': '',
@@ -263,9 +263,9 @@ class DonationAutomation:
         
         # Update with our specific values
         form_data.update({
-            'amount': '1',  # Changed to 1 USD
-            'amount-value': '1',  # Changed to 1 USD
-            'currency': 'USD',  # Changed from EUR to USD
+            'amount': '1',  # Changed to 1 GBP
+            'amount-value': '1',  # Changed to 1 GBP
+            'currency': 'GBP',  # Changed from EUR to GBP
             'payment_type': 'single',
             'description': "I'm donating to support PAH's humanitarian work around the world",
             'first_name': self.first_name,
@@ -532,8 +532,8 @@ class DonationAutomation:
             return None
         
         # Extract amount and currency from payment data
-        amount = payment_data.get('amount', 100)  # Changed to 100 (1 USD = 100 cents)
-        currency = payment_data.get('currency', 'USD')
+        amount = payment_data.get('amount', 100)  # Changed to 100 (1 GBP = 100 pence)
+        currency = payment_data.get('currency', 'GBP')
         
         headers = {
             'accept': '*/*',
@@ -784,22 +784,22 @@ class DonationAutomation:
         # Check for 3DS_NOT_AUTHORIZED before AUTHORIZED
         if "3DS_NOT_AUTHORIZED" in value:
             logger.info("Status: 3DS not authorized")
-            return {"value": "3DS process unsuccessful", "status": "declined"}
+            return {"value": "3DS challenge failed.", "status": "declined"}
         
         # Check for REFUSED_BY_ISSUER
         if "REFUSED_BY_ISSUER" in value:
             logger.info("Status: Refused by issuer")
-            return {"value": "Issuer declined the transaction.", "status": "declined"}
+            return {"value": "Bank refused the payment.", "status": "declined"}
         
         # Check for AUTHORIZED (only if not 3DS_NOT_AUTHORIZED)
         if "AUTHORIZED" in value:
             logger.info("Status: Payment authorized")
-            return {"value": "Payment authorized – $1.00 successful.", "status": "charged"}
+            return {"value": "Payment authorized – £1.00 successful.", "status": "charged"}
         
         # Check for 3DS_METHOD_REQUIRED
         if "3DS_METHOD_REQUIRED" in value:
             logger.info("Status: 3DS method required")
-            return {"value": "Payment requires 3D Secure verification.", "status": "declined"}
+            return {"value": "Additional 3DS step needed.", "status": "declined"}
         
         # Check for ERROR
         if "ERROR" in value:
@@ -819,12 +819,12 @@ class DonationAutomation:
         # Check for CARD_INSUFFICIENT_FUNDS
         if "CARD_INSUFFICIENT_FUNDS" in value:
             logger.info("Status: Insufficient funds")
-            return {"value": "Card has insufficient funds.", "status": "approved"}
+            return {"value": "Balance too low: insufficient funds.", "status": "approved"}
         
         # Check for CARD_LIMIT_EXCEEDED
         if "CARD_LIMIT_EXCEEDED" in value:
             logger.info("Status: Card limit exceeded")
-            return {"value": "Payment declined: limit reached.", "status": "declined"}
+            return {"value": "Card spending limit hitted.", "status": "declined"}
         
         # Check for invalid card number
         if "INVALID_NUMBER" in value:
@@ -858,7 +858,7 @@ class DonationAutomation:
         for keyword in approved_keywords:
             if keyword in value:
                 logger.info(f"Status: Approved (keyword: {keyword})")
-                return {"value": f"Payment authorized – $1.00 successful.", "status": "charged"}
+                return {"value": f"Payment authorized – £1.00 successful.", "status": "charged"}
         
         # Default to declined if no keywords match
         logger.info("Status: Default declined (no keywords matched)")
@@ -910,7 +910,7 @@ class DonationAutomation:
                 # Check if verification timed out (23 seconds)
                 if not verification_completed:
                     logger.warning("3DS verification timed out after 23 seconds")
-                    return {"value": "Payment requires 3D Secure verification.", "status": "declined"}
+                    return {"value": "Additional 3DS step needed.", "status": "declined"}
                 
                 # Step 6: Check payment status with retries after 3DS
                 status_result = self.check_payment_status()
