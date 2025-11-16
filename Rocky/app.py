@@ -23,13 +23,14 @@ GATE_MODULES = {
     'payu1': 'payu1',
 }
 
-@app.route('/rocky/gate/<gate_name>/cc=')
-def process_gate(gate_name):
+@app.route('/rocky/gate/<gate_name>/cc=<card_details>')
+def process_gate(gate_name, card_details):
     """
     Process payment request for specified gate
     
     Args:
         gate_name (str): Name of the gate (payu1euro, payu1pln, payu1)
+        card_details (str): Card details in format: number|exp_month|exp_year|cvv
     
     Returns:
         JSON response with payment status
@@ -42,9 +43,6 @@ def process_gate(gate_name):
                 "value": "Invalid gate specified.",
                 "status": "declined"
             }), 400
-        
-        # Get card details from the query string
-        card_details = request.query_string.decode('utf-8')
         
         # URL decode the card details
         card_details = unquote(card_details)
@@ -89,13 +87,6 @@ def process_gate(gate_name):
             "status": "declined"
         }), 500
 
-@app.route('/health')
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        "status": "healthy",
-        "available_gates": list(GATE_MODULES.keys())
-    })
 
 @app.route('/')
 def index():
