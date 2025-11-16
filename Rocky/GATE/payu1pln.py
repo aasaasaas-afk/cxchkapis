@@ -784,12 +784,12 @@ class DonationAutomation:
         # Check for 3DS_NOT_AUTHORIZED before AUTHORIZED
         if "3DS_NOT_AUTHORIZED" in value:
             logger.info("Status: 3DS not authorized")
-            return {"value": "3DS process unsuccessful", "status": "declined"}
+            return {"value": "Authentication declined by 3DS", "status": "declined"}
         
         # Check for REFUSED_BY_ISSUER
         if "REFUSED_BY_ISSUER" in value:
             logger.info("Status: Refused by issuer")
-            return {"value": "Issuer declined the transaction.", "status": "declined"}
+            return {"value": "Issuer blocked the transaction.", "status": "declined"}
         
         # Check for AUTHORIZED (only if not 3DS_NOT_AUTHORIZED)
         if "AUTHORIZED" in value:
@@ -799,7 +799,7 @@ class DonationAutomation:
         # Check for 3DS_METHOD_REQUIRED
         if "3DS_METHOD_REQUIRED" in value:
             logger.info("Status: 3DS method required")
-            return {"value": "Payment requires 3D Secure verification.", "status": "declined"}
+            return {"value": "Extra security check required.", "status": "declined"}
         
         # Check for ERROR
         if "ERROR" in value:
@@ -809,7 +809,7 @@ class DonationAutomation:
         # Check for NOT_ACCEPTED
         if "NOT_ACCEPTED" in value:
             logger.info("Status: Not accepted")
-            return {"value": "Payment not accepted.", "status": "declined"}
+            return {"value": "Transaction not accepted.", "status": "declined"}
         
         # Check for CARD_NUMBER_ERROR
         if "CARD_NUMBER_ERROR" in value:
@@ -819,7 +819,7 @@ class DonationAutomation:
         # Check for CARD_INSUFFICIENT_FUNDS
         if "CARD_INSUFFICIENT_FUNDS" in value:
             logger.info("Status: Insufficient funds")
-            return {"value": "Card has insufficient funds.", "status": "approved"}
+            return {"value": "Payment declined: low funds.", "status": "approved"}
         
         # Check for CARD_LIMIT_EXCEEDED
         if "CARD_LIMIT_EXCEEDED" in value:
@@ -910,7 +910,7 @@ class DonationAutomation:
                 # Check if verification timed out (23 seconds)
                 if not verification_completed:
                     logger.warning("3DS verification timed out after 23 seconds")
-                    return {"value": "Payment requires 3D Secure verification.", "status": "declined"}
+                    return {"value": "Extra security check required.", "status": "declined"}
                 
                 # Step 6: Check payment status with retries after 3DS
                 status_result = self.check_payment_status()
@@ -961,4 +961,5 @@ def process_payment(card_details):
         return result
     finally:
         # Clean up resources
+
         donation.cleanup()
