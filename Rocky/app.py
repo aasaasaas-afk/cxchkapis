@@ -86,6 +86,7 @@ def process_gate(gate_name):
 @app.route('/')
 def index():
     """Root endpoint showing a simple HTML page"""
+    html_content = """
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -119,13 +120,6 @@ def index():
             letter-spacing: -1px;
             text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
             animation: fadeInUp 1s ease-out;
-        }
-        .message {
-            font-size: 26px;
-            line-height: 1.5;
-            margin-bottom: 40px;
-            opacity: 0.9;
-            animation: fadeInUp 1.2s ease-out;
         }
         .checkmark {
             width: 120px;
