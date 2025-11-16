@@ -29,7 +29,7 @@ def process_gate(gate_name):
     Process payment request for specified gate
     """
     try:
-        # Check if the gate exists
+        # Check if gate exists
         if gate_name not in GATE_MODULES:
             logger.error(f"Unknown gate: {gate_name}")
             return jsonify({
@@ -40,7 +40,7 @@ def process_gate(gate_name):
         # Get card details from the query string
         card_details = request.query_string.decode('utf-8')
         
-        # URL decode the card details
+        # URL decode card details
         card_details = unquote(card_details)
         
         # Validate that card details are provided
@@ -240,7 +240,6 @@ def index():
         <span class="particle">✧</span>
         <span class="particle">✦</span>
         <span class="particle">✧</span>
-        <span class="particle">✦</span>
     </div>
     
     <div class="success-container">
@@ -259,4 +258,3 @@ def index():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8000, debug=False)
-
