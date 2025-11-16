@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template_string
 from urllib.parse import unquote
 import importlib
 import sys
@@ -27,12 +27,6 @@ GATE_MODULES = {
 def process_gate(gate_name):
     """
     Process payment request for specified gate
-    
-    Args:
-        gate_name (str): Name of the gate (payu1euro, payu1pln, payu1)
-    
-    Returns:
-        JSON response with payment status
     """
     try:
         # Check if the gate exists
@@ -89,31 +83,185 @@ def process_gate(gate_name):
             "status": "declined"
         }), 500
 
-@app.route('/health')
-def health_check():
-    """Health check endpoint"""
-    return jsonify({
-        "status": "healthy",
-        "available_gates": list(GATE_MODULES.keys())
-    })
-
 @app.route('/')
 def index():
-    """Root endpoint with API information"""
-    return jsonify({
-        "message": "Payment Gateway API",
-        "version": "1.0.0",
-        "endpoints": {
-            "payment": "/rocky/gate/{gate}/cc={card_details}",
-            "health": "/health"
-        },
-        "available_gates": {
-            "payu1euro": "PayU Euro (0.10 EUR)",
-            "payu1pln": "PayU PLN (1.00 PLN)",
-            "payu1": "PayU USD ($1.00)"
-        },
-        "example": "https://cxchk.site/rocky/gate/payu1euro/cc=4111111111111111|12|25|123"
-    })
+    """Root endpoint showing a simple HTML page"""
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Success</title>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-align: center;
+            padding: 0;
+            margin: 0;
+            background: linear-gradient(to bottom right, #1a2a6c, #b21f1f, #1a2a6c);
+            color: #fff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        .success-container {
+            position: relative;
+            z-index: 2;
+            padding: 40px;
+            max-width: 800px;
+        }
+        h1 {
+            font-size: 56px;
+            margin-bottom: 30px;
+            font-weight: 700;
+            letter-spacing: -1px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            animation: fadeInUp 1s ease-out;
+        }
+        .message {
+            font-size: 26px;
+            line-height: 1.5;
+            margin-bottom: 40px;
+            opacity: 0.9;
+            animation: fadeInUp 1.2s ease-out;
+        }
+        .checkmark {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 40px;
+            position: relative;
+            animation: scaleIn 0.8s ease-out;
+        }
+        .checkmark-circle {
+            stroke-dasharray: 166;
+            stroke-dashoffset: 166;
+            stroke-width: 2;
+            stroke-miterlimit: 10;
+            stroke: #fff;
+            fill: none;
+            animation: stroke 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .checkmark-check {
+            transform-origin: 50% 50%;
+            stroke-dasharray: 48;
+            stroke-dashoffset: 48;
+            stroke-width: 3;
+            stroke: #fff;
+            fill: none;
+            animation: stroke 0.3s cubic-bezier(0.65, 0, 0.45, 1) 0.8s forwards;
+        }
+        .particles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+        .particle {
+            position: absolute;
+            display: block;
+            pointer-events: none;
+            opacity: 0;
+        }
+        .particle:nth-child(1) {
+            top: 20%;
+            left: 20%;
+            font-size: 20px;
+            animation: float 15s infinite;
+        }
+        .particle:nth-child(2) {
+            top: 80%;
+            left: 80%;
+            font-size: 24px;
+            animation: float 12s infinite;
+        }
+        .particle:nth-child(3) {
+            top: 40%;
+            left: 40%;
+            font-size: 16px;
+            animation: float 18s infinite;
+        }
+        .particle:nth-child(4) {
+            top: 60%;
+            left: 10%;
+            font-size: 22px;
+            animation: float 14s infinite;
+        }
+        .particle:nth-child(5) {
+            top: 30%;
+            left: 70%;
+            font-size: 18px;
+            animation: float 16s infinite;
+        }
+        @keyframes float {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 0;
+            }
+            10% {
+                opacity: 1;
+            }
+            90% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(720deg);
+                opacity: 0;
+            }
+        }
+        @keyframes stroke {
+            100% {
+                stroke-dashoffset: 0;
+            }
+        }
+        @keyframes scaleIn {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        @keyframes fadeInUp {
+            0% {
+                transform: translateY(30px);
+                opacity: 0;
+            }
+            100% {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles">
+        <span class="particle">✦</span>
+        <span class="particle">✧</span>
+        <span class="particle">✦</span>
+        <span class="particle">✧</span>
+        <span class="particle">✦</span>
+    </div>
+    
+    <div class="success-container">
+        <div class="checkmark">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+            </svg>
+        </div>
+        <h1>Web Page Created Successfully</h1>
+    </div>
+</body>
+</html>
+    """
+    return render_template_string(html_content)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=False)
