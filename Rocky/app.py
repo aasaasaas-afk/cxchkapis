@@ -257,7 +257,4 @@ def index():
     return render_template_string(html_content)
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8000, debug=False)}
-
-
-in this the endpoints for checking are not wworking fix them
+    app.run(host='0.0.0.0', port=8000, debug=False)
