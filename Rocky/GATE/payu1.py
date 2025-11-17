@@ -138,6 +138,13 @@ class DonationAutomation:
         except Exception as e:
             return False, str(e)
     
+    def debug_response(self, response, context=""):
+        """Debug helper to log response details"""
+        logger.error(f"Debug info for {context}:")
+        logger.error(f"Status Code: {response.status_code}")
+        logger.error(f"Headers: {response.headers}")
+        logger.error(f"Content: {response.text}")
+    
     def make_initial_request(self):
         """Make the initial GET request to the PAH donation page"""
         logger.info("Making initial request to PAH donation page")
@@ -457,8 +464,27 @@ class DonationAutomation:
             'user-agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/142.0.0.0 Mobile Safari/537.36',
         }
 
+        # Try to extract the correct POS ID from the order data first
+        pos_id = None
+        try:
+            order_response = self.session.get(
+                f'https://secure.payu.com/api/front/orders/{self.order_id}',
+                headers=headers
+            )
+            if order_response.status_code == 200:
+                order_data = order_response.json()
+                pos_id = order_data.get('posId')
+                logger.info(f"Extracted POS ID from order: {pos_id}")
+        except Exception as e:
+            logger.warning(f"Failed to extract POS ID: {str(e)}")
+        
+        # If we couldn't get the POS ID, use a default
+        if not pos_id:
+            pos_id = 'PAYU S.A.'
+            logger.warning(f"Using default POS ID: {pos_id}")
+
         json_data = {
-            'posId': 'PAYU S.A.',
+            'posId': pos_id,
             'type': 'SINGLE',
             'card': {
                 'number': self.card_number,
@@ -477,6 +503,10 @@ class DonationAutomation:
         )
         
         logger.info(f"Tokenization response: {response.status_code}")
+        
+        # Debug: Log the response content for errors
+        if response.status_code != 200:
+            self.debug_response(response, "tokenization")
         
         if response.status_code == 200:
             response_data = response.json()
@@ -518,6 +548,10 @@ class DonationAutomation:
         if response.status_code == 200:
             payment_data = response.json()
             logger.info(f"Payment amount: {payment_data.get('amount', 'N/A')} {payment_data.get('currency', 'N/A')}")
+            
+            # Debug: Log the entire payment data response
+            logger.debug(f"Full payment data: {json.dumps(payment_data, indent=2)}")
+            
             return payment_data
             
         return None
@@ -532,8 +566,13 @@ class DonationAutomation:
             return None
         
         # Extract amount and currency from payment data
-        amount = payment_data.get('amount', 100)  # Changed to 100 (1 GBP = 100 pence)
+        amount = payment_data.get('amount', 100)  # Default to 100 (1 GBP = 100 pence)
         currency = payment_data.get('currency', 'GBP')
+        
+        # Ensure amount is in the smallest currency unit
+        if amount < 100:
+            logger.warning(f"Amount seems to be in major currency units. Converting: {amount} -> {amount * 100}")
+            amount = amount * 100
         
         headers = {
             'accept': '*/*',
@@ -599,6 +638,10 @@ class DonationAutomation:
         )
         
         logger.info(f"Payment submission response: {response.status_code}")
+        
+        # Debug: Log the response content for 400 errors
+        if response.status_code == 400:
+            self.debug_response(response, "payment submission")
         
         if response.status_code == 200:
             payment_response = response.json()
