@@ -18,9 +18,25 @@ from selenium.common.exceptions import TimeoutException
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+# Proxy configuration
+PROXY_HOST = "TITS.OOPS.WTF"
+PROXY_PORT = 6969
+PROXY_USERNAME = "k4lnx"
+PROXY_PASSWORD = "rockyalways"
+
+# Create proxy URL for requests
+PROXY_URL = f"http://{PROXY_USERNAME}:{PROXY_PASSWORD}@{PROXY_HOST}:{PROXY_PORT}"
+PROXIES = {
+    'http': PROXY_URL,
+    'https': PROXY_URL,
+}
+
 class DonationAutomation:
     def __init__(self):
         self.session = requests.Session()
+        # Set proxy for the session
+        self.session.proxies.update(PROXIES)
+        
         self.order_id = None
         self.payment_token = None
         self.card_token = None
@@ -420,10 +436,12 @@ class DonationAutomation:
             'token': self.payment_token,
         }
         
+        # Use direct requests with proxy
         response = requests.get(
             'https://secure.payu.com/pay/',
             params=params,
-            headers=headers
+            headers=headers,
+            proxies=PROXIES
         )
         
         logger.info(f"Follow redirect response: {response.status_code}")
@@ -659,7 +677,7 @@ class DonationAutomation:
         return None
     
     def setup_driver(self):
-        """Set up Chrome driver for 3DS verification"""
+        """Set up Chrome driver for 3DS verification with proxy"""
         logger.info("Setting up Chrome driver for 3DS verification")
         
         chrome_options = Options()
@@ -669,13 +687,84 @@ class DonationAutomation:
         chrome_options.add_argument("--disable-gpu")
         chrome_options.add_argument("--window-size=1920,1080")
         
+        # Add proxy configuration
+        chrome_options.add_argument(f"--proxy-server=http://{PROXY_HOST}:{PROXY_PORT}")
+        
+        # Add proxy authentication extension
+        pluginfile = 'proxy_auth_plugin.zip'
+        
+        import zipfile
+        import os
+        
+        manifest_json = """
+        {
+            "version": "1.0.0",
+            "manifest_version": 2,
+            "name": "Chrome Proxy",
+            "permissions": [
+                "proxy",
+                "tabs",
+                "unlimitedStorage",
+                "storage",
+                "<all_urls>",
+                "webRequest",
+                "webRequestBlocking"
+            ],
+            "background": {
+                "scripts": ["background.js"]
+            },
+            "minimum_chrome_version": "22.0.0"
+        }
+        """
+        
+        background_js = """
+        var config = {
+                mode: "fixed_servers",
+                rules: {
+                singleProxy: {
+                    scheme: "http",
+                    host: "%s",
+                    port: parseInt(%s)
+                },
+                bypassList: ["localhost"]
+                }
+            };
+        
+        chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
+        
+        function callbackFn(details) {
+            return {
+                authCredentials: {
+                    username: "%s",
+                    password: "%s"
+                }
+            };
+        }
+        
+        chrome.webRequest.onAuthRequired.addListener(
+                    callbackFn,
+                    {urls: ["<all_urls>"]},
+                    ['blocking']
+        );
+        """ % (PROXY_HOST, PROXY_PORT, PROXY_USERNAME, PROXY_PASSWORD)
+        
+        with zipfile.ZipFile(pluginfile, 'w') as zp:
+            zp.writestr("manifest.json", manifest_json)
+            zp.writestr("background.js", background_js)
+        
+        chrome_options.add_extension(pluginfile)
+        
         try:
             self.driver = webdriver.Chrome(options=chrome_options)
-            logger.info("Chrome driver set up successfully")
+            logger.info("Chrome driver set up successfully with proxy")
             return True
         except Exception as e:
             logger.error(f"Failed to set up Chrome driver: {str(e)}")
             return False
+        finally:
+            # Clean up the plugin file
+            if os.path.exists(pluginfile):
+                os.remove(pluginfile)
     
     def handle_3ds_verification(self):
         """Handle 3D Secure verification by following the continueUrl with Selenium"""
